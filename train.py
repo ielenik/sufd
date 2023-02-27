@@ -58,10 +58,10 @@ if True:
 
         face_count = tf.shape(tr_faces)[0]
 
-        error_false_neg = tf.reduce_sum(1-tf.math.sigmoid(pr_faces[:,0]))
+        error_false_neg = tf.reduce_sum(-tf.math.log(tf.math.sigmoid(pr_faces[:,0]) + 1e-4))
         #error_false_neg = tf.reduce_sum(tf.nn.relu(1 - pr_faces[:,0]))
         proc_error_false_neg = tf.reduce_sum(tf.cast(tf.greater_equal(0.5,tf.math.sigmoid(pr_faces[:,0])),tf.float32))
-        error_false_pos = tf.reduce_sum(tr[:,:,:,0] * tf.math.sigmoid(pr[:,:,:,0]))
+        error_false_pos = tf.reduce_sum(tr[:,:,:,0] * -tf.math.log(1-tf.math.sigmoid(pr[:,:,:,0]) + 1e-4))
         #error_false_pos = tf.reduce_sum(tr[:,:,:,0] * tf.nn.relu(1 + pr[:,:,:,0]))
         proc_error_false_pos = tf.reduce_sum(tf.cast(tf.greater_equal(tr[:,:,:,0]*tf.math.sigmoid(pr[:,:,:,0]),0.5),tf.float32))
 
@@ -87,7 +87,7 @@ if True:
 
         error_shift     = tf.reduce_sum(tf.square(pr_faces[:,1] - tr_faces[:,2])) + tf.reduce_sum(tf.square(pr_faces[:,2] - tr_faces[:,3]))
         total_error = (error_size + error_angle*5  + error_shift) + \
-            error_false_neg + error_false_pos/100 + \
+            error_false_neg + error_false_pos + \
             error_mask + error_spoof
         # total_error = error_false_neg*10 + error_false_pos
         return total_error, \

@@ -1,6 +1,5 @@
 
 import tensorflow as tf
-import segmentation_models as sm
 INPUT_SIZE = None
 
 def display_model_info(model):
@@ -91,7 +90,7 @@ def createFaceModel():
     feathures = tf.keras.layers.Dropout(0.4)(feathures)
     face_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
     face_prob = tf.keras.layers.BatchNormalization()(face_prob)
-    face_prob = tf.keras.layers.Dense(1)(face_prob) - 30
+    face_prob = tf.keras.layers.Dense(1)(face_prob) - 10
     maskspoof_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
     maskspoof_prob = tf.keras.layers.BatchNormalization()(maskspoof_prob)
     maskspoof_prob = tf.keras.layers.Dense(2)(maskspoof_prob)
