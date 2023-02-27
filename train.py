@@ -39,7 +39,7 @@ if True:
     bContinue = False
 
     if conf.RESUME_TRAIN:
-        model = tf.keras.models.load_model(conf.BEST_MODEL_NAME)
+        model = tf.keras.models.load_model(conf.LAST_MODEL_NAME)
     else:
         model = createFaceModel()
 
@@ -120,8 +120,8 @@ if True:
     
     model.compile()
     
-    best_err = 1e6
-    t_total_loss = 1e7
+    best_err = 1e7
+    t_total_loss = 1e8
     step_at_epoch = conf.STEPS_PER_EPOCH
     total_steps = -1
 
@@ -186,7 +186,7 @@ if True:
         t_cnt_s += cnt_s
         step_at_epoch += 1
         print(total_steps, total_steps*conf.BATCH_SIZE*conf.STEPS_PER_EPOCH+step_at_epoch*conf.BATCH_SIZE,t_cnt, 
-            f"%.3fms loss:%.2f fp:%.2f fn:%.2f sz:%.2f ang:%.2f msk:%.2f spf:%.2f shft:%.2f            "%((time.time() - st)/(step_at_epoch*conf.BATCH_SIZE), t_total_loss/(step_at_epoch*conf.BATCH_SIZE),
+            f"%.3fms loss:%.2f fp:%.2f fn:%.2f sz:%.2f ang:%.2f msk:%.2f spf:%.2f shft:%.2f            "%((time.time() - st)*1000/(step_at_epoch*conf.BATCH_SIZE), t_total_loss/(step_at_epoch*conf.BATCH_SIZE),
             t_fp/(step_at_epoch*conf.BATCH_SIZE), t_fn/t_cnt, t_sz/t_cnt, t_ang/t_cnt, t_ms/t_cnt_m, t_sp/t_cnt_s, t_sh/t_cnt), 
             end = '\r'
             )
