@@ -1,0 +1,10 @@
+# Editors
+.vscode/
+
+temp/
+wandb/
+models/
+
+__pycache__/
+
+*.mp4
