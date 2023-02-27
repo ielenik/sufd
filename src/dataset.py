@@ -10,6 +10,7 @@ import json
 import os
 from tqdm import tqdm
 from random import shuffle
+import config as conf
 
 def load_rkk(path, records):
     with open(path + '/info.txt') as addf:
@@ -75,17 +76,16 @@ def load_dataset(path):
     return records
 
 
-BATCH_SIZE = 512
-tilesize_full = 128
-anchors_scale  = 16
+BATCH_SIZE = conf.BATCH_SIZE
+tilesize_full = conf.TILE_SIZE
+anchors_scale  = conf.OUTPUT_SCALE
 tilesize_small = tilesize_full//anchors_scale
 part_for_validation = 200
 
 
 def getFaceDatasets():
-    path = 'c:\\databases\\findface'
+    path = conf.DATASET_PATH
     records = load_dataset(path)
-
 
     def prepare_image_transform(ind):
         filename = records[ind][0]
@@ -95,8 +95,8 @@ def getFaceDatasets():
             scalefit = 1
         scale = np.random.randint(30,200)/100.*scalefit
 
-        ranshx = max((w*scale-tilesize_full)/2, 64)
-        ranshy = max((h*scale-tilesize_full)/2, 64)
+        ranshx = max((w*scale-tilesize_full)/2, tilesize_full/8)
+        ranshy = max((h*scale-tilesize_full)/2, tilesize_full/8)
 
         angle = math.radians(np.random.randint(-60,60))
         shx = np.random.randint(-ranshx,ranshx)

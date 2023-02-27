@@ -2,10 +2,13 @@ import tensorflow as tf
 import numpy as np
 import cv2 as cv2
 import math
+import os
+import config
 
-OUTPUT_SCALE = 16
 def displayData(ds):
     por_num = 0
+    if not os.path.isdir('temp'):
+        os.mkdir('temp')
     for rec in ds.take(4):
         ai,bi = rec
         for i in range(64):
@@ -17,8 +20,8 @@ def displayData(ds):
             ind =  list(zip(ind[0], ind[1]))
             for find in ind:
                 f = msk[find]
-                centre_x = find[1]*OUTPUT_SCALE 
-                centre_y = find[0]*OUTPUT_SCALE
+                centre_x = find[1]*config.OUTPUT_SCALE 
+                centre_y = find[0]*config.OUTPUT_SCALE
                 cv2.circle(img, (int(centre_x), int(centre_y)), 3, (255,0,0), 1)
             
             ind  = np.where(msk[:,:,1] == 1)
@@ -29,8 +32,8 @@ def displayData(ds):
                 a =  f[4]
                 angle = f[5]
 
-                centre_x = (find[1]+f[2])*OUTPUT_SCALE 
-                centre_y = (find[0]+f[3])*OUTPUT_SCALE
+                centre_x = (find[1]+f[2])*config.OUTPUT_SCALE 
+                centre_y = (find[0]+f[3])*config.OUTPUT_SCALE
 
                 colors = [ (255,0,0), (0,255,0),(255,0,255),(255,255,0),]
                 for j in range(4):

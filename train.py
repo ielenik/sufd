@@ -1,19 +1,20 @@
 import tensorflow as tf
 import numpy as np
-from dataset import getFaceDatasets
-from facemodel import createFaceModel
-from displaydata import displayData
 import time
 import wandb
-fine_tune = False
+import importlib
+
+from src.dataset import getFaceDatasets
+from src.facemodel import createFaceModel
+from src.displaydata import displayData
+import src.config as conf
+
+
 if __debug__:
     wandb.init(mode="disabled")
     print('*'*20, "DEGUG MODE", '*'*20)
 else:
-    if fine_tune:
-        wandb.init(project="FaceFindRev_ft")
-    else:
-        wandb.init(project="FaceFindRev")
+    wandb.init(project="FaceFindRev", resume = conf.RESUME_TRAIN)
 
 def set_batchnorm_momentum(model, m):
     def _set_batchnorm_momentum(layer, m):
@@ -25,24 +26,27 @@ def set_batchnorm_momentum(model, m):
     _set_batchnorm_momentum(model, m)
     return
 
-# strategy = tf.distribute.MirroredStrategy(cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
-# with strategy.scope():
 
 def tf_decorator(func):
     if __debug__:
         return func
     else:
         return tf.function(func)
+
+# strategy = tf.distribute.MirroredStrategy(cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
+# with strategy.scope():
 if True:
     bContinue = False
-    # if __debug__:
-    #     bContinue = True
-    if fine_tune or bContinue:
-        model = tf.keras.models.load_model('best.h5')
+
+    if conf.RESUME_TRAIN:
+        model = tf.keras.models.load_model(conf.BEST_MODEL_NAME)
     else:
         model = createFaceModel()
+
     train, valid = getFaceDatasets()
-    displayData(train)
+
+    if conf.OUTPUT_PREVIEW:
+        displayData(train)
     # train = strategy.experimental_distribute_dataset(train)
     # valid = strategy.experimental_distribute_dataset(valid)
 
@@ -109,81 +113,80 @@ if True:
 
         return total_loss, fn,fp,sz,ang,ms,sp,sh, cnt, cnt_m, cnt_s
 
-    if fine_tune:
-        optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    if conf.USE_ADAM_OPTIMIZER:
+        optimizer = tf.keras.optimizers.Adam(learning_rate=conf.LEARNING_RATE)
     else:
-        optimizer = tf.keras.optimizers.SGD(learning_rate=0.01, momentum = 0.5, nesterov = True)
-    #optimizer = tf.keras.optimizers.SGD(learning_rate=1e-6, momentum = 0.7, nesterov = True)
+        optimizer = tf.keras.optimizers.SGD(learning_rate=conf.LEARNING_RATE, momentum = conf.MOMENTUM, nesterov = conf.NESTEROV)
+    
     model.compile()
-
+    
     best_err = 1e6
-    t_total_loss = 1e7
-    for epoch in range(256):
-        total_cnt  = 1e10
-        total_step = 257
-        sub_step = -1
+    step_at_epoch = conf.STEPS_PER_EPOCH
+    total_steps = -1
 
-        for image_batch in train:
-            if total_step >= 64:
-                # if sub_step >= 1 and sub_step <= 2:
-                #     print("Set learning rate to", 1e-6*(10**(sub_step)))
-                #     optimizer.learning_rate.assign(1e-6*(10**(sub_step)))
-                if sub_step > 1:
-                    #t_fp/(total_step*64), t_fn/t_cnt, t_sz/t_cnt, t_ang/t_cnt, t_ms/t_cnt_m, t_sp/t_cnt_s, t_sh/t_cnt), end = '\r')
-                    wandb.log(
-                        {
-                            'total_loss': t_total_loss/(total_step*64), 
-                            'fp per image': t_fp/(total_step*64), 
-                            'fn per sample': t_fn/t_cnt,
-                            'log sz mse': t_sz/t_cnt,
-                            'angle mse': t_ang/t_cnt,
-                            'shift mse': t_sh/t_cnt,
-                            'mask': t_ms/t_cnt_m,
-                            'spoof': t_sp/t_cnt_s,
-                            }
-                        )
+    for image_batch in train:
+        if step_at_epoch >= conf.STEPS_PER_EPOCH:
+            # if sub_step >= 1 and sub_step <= 2:
+            #     print("Set learning rate to", 1e-6*(10**(sub_step)))
+            #     optimizer.learning_rate.assign(1e-6*(10**(sub_step)))
+            if total_steps > 1:
+                #t_fp/(total_step*64), t_fn/t_cnt, t_sz/t_cnt, t_ang/t_cnt, t_ms/t_cnt_m, t_sp/t_cnt_s, t_sh/t_cnt), end = '\r')
+                wandb.log(
+                    {
+                        'total_loss': t_total_loss/(step_at_epoch*conf.BATCH_SIZE), 
+                        'fp per image': t_fp/(step_at_epoch*conf.BATCH_SIZE), 
+                        'fn per sample': t_fn/t_cnt,
+                        'log sz mse': t_sz/t_cnt,
+                        'angle mse': t_ang/t_cnt,
+                        'shift mse': t_sh/t_cnt,
+                        'mask': t_ms/t_cnt_m,
+                        'spoof': t_sp/t_cnt_s,
+                        }
+                    )
 
+            print()
+            prev_lr = conf.LEARNING_RATE
+            importlib.reload(conf)
+            if prev_lr != conf.LEARNING_RATE:
+                print("Set learning rate to", conf.LEARNING_RATE)
+                optimizer.learning_rate.assign(conf.LEARNING_RATE)
 
-                print()
-                if best_err > t_total_loss:
-                    model.save('best.h5')
-                    best_err = t_total_loss
-                    print('*** best model')
+            if best_err > t_total_loss:
+                model.save('best.h5')
+                best_err = t_total_loss
+                print('*** best model')
 
-                momentum = 1 - 10**(-sub_step-2)
-                if momentum <= 0.9999:
-                    set_batchnorm_momentum(model, momentum)
-                    print("Set momentum to", momentum)
+            momentum = 1 - 10**(-total_steps-2)
+            if momentum <= 0.9999:
+                set_batchnorm_momentum(model, momentum)
+                print("Set momentum to", momentum)
 
-                t_total_loss, t_fn, t_fp, t_sz, t_ang, t_ms, t_sp, t_sh, t_cnt, t_cnt_m, t_cnt_s = 0,0,0,0,0,0,0,0,0,0,0
-                total_step = 0
-                st = time.time()
-                sub_step += 1
-                model.save('last_model.h5')
+            t_total_loss, t_fn, t_fp, t_sz, t_ang, t_ms, t_sp, t_sh, t_cnt, t_cnt_m, t_cnt_s = 0,0,0,0,0,0,0,0,0,0,0
+            step_at_epoch = 0
+            st = time.time()
+            total_steps += 1
+            model.save('last_model.h5')
 
-            # res = strategy.run(train_on_batch, args=(optimizer, image_batch))
-            # total_loss, fn, fp, sz, ang, ms, sp, sh, cnt, cnt_m, cnt_s = [ strategy.reduce(tf.distribute.ReduceOp.SUM, i, axis=None).numpy() for i in res]
-            res = train_on_batch(optimizer, image_batch)
-            total_loss, fn, fp, sz, ang, ms, sp, sh, cnt, cnt_m, cnt_s = [ i.numpy() for i in res]
+        # res = strategy.run(train_on_batch, args=(optimizer, image_batch))
+        # total_loss, fn, fp, sz, ang, ms, sp, sh, cnt, cnt_m, cnt_s = [ strategy.reduce(tf.distribute.ReduceOp.SUM, i, axis=None).numpy() for i in res]
+        res = train_on_batch(optimizer, image_batch)
+        total_loss, fn, fp, sz, ang, ms, sp, sh, cnt, cnt_m, cnt_s = [ i.numpy() for i in res]
 
-            t_total_loss += total_loss
-            t_fn += fn
-            t_fp += fp
-            t_sz += sz
-            t_ang += ang
-            t_ms += ms
-            t_sp += sp
-            t_sh += sh
-            t_cnt += cnt
-            t_cnt_m += cnt_m
-            t_cnt_s += cnt_s
-            total_step += 1
-            print(sub_step, sub_step*64*64+total_step*64,t_cnt, 
-                f"%.3fms loss:%.2f fp:%.2f fn:%.2f sz:%.2f ang:%.2f msk:%.2f spf:%.2f shft:%.2f            "%((time.time() - st)/(total_step*64), t_total_loss/(total_step*64),
-                t_fp/(total_step*64), t_fn/t_cnt, t_sz/t_cnt, t_ang/t_cnt, t_ms/t_cnt_m, t_sp/t_cnt_s, t_sh/t_cnt), 
-                end = '\r'
-                )
-
-        print()
-
+        t_total_loss += total_loss
+        t_fn += fn
+        t_fp += fp
+        t_sz += sz
+        t_ang += ang
+        t_ms += ms
+        t_sp += sp
+        t_sh += sh
+        t_cnt += cnt
+        t_cnt_m += cnt_m
+        t_cnt_s += cnt_s
+        step_at_epoch += 1
+        print(total_steps, total_steps*conf.BATCH_SIZE*conf.STEPS_PER_EPOCH+step_at_epoch*conf.BATCH_SIZE,t_cnt, 
+            f"%.3fms loss:%.2f fp:%.2f fn:%.2f sz:%.2f ang:%.2f msk:%.2f spf:%.2f shft:%.2f            "%((time.time() - st)/(step_at_epoch*conf.BATCH_SIZE), t_total_loss/(step_at_epoch*conf.BATCH_SIZE),
+            t_fp/(step_at_epoch*conf.BATCH_SIZE), t_fn/t_cnt, t_sz/t_cnt, t_ang/t_cnt, t_ms/t_cnt_m, t_sp/t_cnt_s, t_sh/t_cnt), 
+            end = '\r'
+            )
 
