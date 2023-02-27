@@ -1,4 +1,4 @@
-RESUME_TRAIN = False
+RESUME_TRAIN = True
 OUTPUT_PREVIEW = False
 
 

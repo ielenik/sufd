@@ -153,7 +153,7 @@ if True:
                 optimizer.learning_rate.assign(conf.LEARNING_RATE)
 
             if best_err > t_total_loss:
-                model.save('best.h5')
+                model.save(conf.BEST_MODEL_NAME)
                 best_err = t_total_loss
                 print('*** best model')
 
