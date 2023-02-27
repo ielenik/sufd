@@ -2,8 +2,8 @@ RESUME_TRAIN = True
 OUTPUT_PREVIEW = False
 
 
-BEST_MODEL_NAME = 'best.h5'
-LAST_MODEL_NAME = 'save.h5'
+BEST_MODEL_NAME = 'models/best.h5'
+LAST_MODEL_NAME = 'models/save.h5'
 
 TILE_SIZE = 128
 OUTPUT_SCALE = 16

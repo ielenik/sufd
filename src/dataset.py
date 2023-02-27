@@ -10,7 +10,7 @@ import json
 import os
 from tqdm import tqdm
 from random import shuffle
-import config as conf
+from . import config as conf
 
 def load_rkk(path, records):
     with open(path + '/info.txt') as addf:

@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv2
 import math
 import os
-import config
+from . import config
 
 def displayData(ds):
     por_num = 0

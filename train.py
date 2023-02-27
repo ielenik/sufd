@@ -87,7 +87,7 @@ if True:
 
         error_shift     = tf.reduce_sum(tf.square(pr_faces[:,1] - tr_faces[:,2])) + tf.reduce_sum(tf.square(pr_faces[:,2] - tr_faces[:,3]))
         total_error = (error_size + error_angle*5  + error_shift) + \
-            error_false_neg + error_false_pos + \
+            error_false_neg + error_false_pos/100 + \
             error_mask + error_spoof
         # total_error = error_false_neg*10 + error_false_pos
         return total_error, \
@@ -121,6 +121,7 @@ if True:
     model.compile()
     
     best_err = 1e6
+    t_total_loss = 1e7
     step_at_epoch = conf.STEPS_PER_EPOCH
     total_steps = -1
 
@@ -165,7 +166,7 @@ if True:
             step_at_epoch = 0
             st = time.time()
             total_steps += 1
-            model.save('last_model.h5')
+            model.save(conf.LAST_MODEL_NAME)
 
         # res = strategy.run(train_on_batch, args=(optimizer, image_batch))
         # total_loss, fn, fp, sz, ang, ms, sp, sh, cnt, cnt_m, cnt_s = [ strategy.reduce(tf.distribute.ReduceOp.SUM, i, axis=None).numpy() for i in res]
