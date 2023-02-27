@@ -15,4 +15,4 @@ NESTEROV = True
 BATCH_SIZE = 512
 STEPS_PER_EPOCH = 256
 
-DATASET_PATH = r'c:\databases\findface'
+DATASET_PATH = r'y:\findface'
