@@ -7,5 +7,4 @@ models/
 media/
 
 __pycache__/
-src/config.py
 *.mp4
