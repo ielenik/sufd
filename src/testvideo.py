@@ -9,26 +9,35 @@ from random import shuffle
 from PIL import Image
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
-model1 = tf.keras.models.load_model('models/hpm6_068.h5')
-model2 = tf.keras.models.load_model('models/best.h5')
+#os.environ["CUDA_VISIBLE_DEVICES"]="1"
+model1 = tf.keras.models.load_model('models/final_large.h5')
+model2 = tf.keras.models.load_model('models/1003.h5')
+model3 = tf.keras.models.load_model('models/medium.h5')
 #model = tf.keras.models.load_model('models/best.h5')
 pad_size = 64
 threshold = 0.5
-MULTIPLE = 16
+MULTIPLE = 32
 
-models = [ model1, model2 ]
-colors = [ (255,0,0), (0,255,0)]
+models = [ model1, model2, model3 ]
+colors = [ (255,0,0), (0,255,0), (0,0,255)]
+times = np.zeros((3,16))
+fr_count  = 16
 
 def find_faces(img):
+    global fr_count
 
+    fr_count += 1
     img_cv = (((img+1)*127.5)[0]).astype(np.uint8)
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     def sigmoid(x):
         return 1/(1 + np.exp(-x))
 
-    for model, col in zip(models, colors):
+    for k in range(len(models)):
+        model = models[k]
+        col = colors[k]
+
+        times[k,fr_count%16] = times[k,(fr_count+15)%16] - time.perf_counter()
         pr = model(img)[0:1]
 
         centers = pr[:,:,:,0:1]
@@ -38,6 +47,7 @@ def find_faces(img):
         centers = tf.where(faces)
         faces = tf.gather_nd(pr, centers)
         num_faces = len(faces)
+        times[k,fr_count%16] += time.perf_counter()
 
         
         faces = faces.numpy()
@@ -64,16 +74,13 @@ def find_faces(img):
                 cv2.line(img_cv, p1d, p2d, col, 1)
                 angle += math.pi/2
 
-        # _, ax = plt.subplots(1, 1)
-        # ax.imshow(np.array(img_cv))
-        # plt.show()
     return img_cv
 
 import time
 
-cap = cv2.VideoCapture('media/77677667.mp4')
+#cap = cv2.VideoCapture('media/77677667.mp4')
 #cap = cv2.VideoCapture('media/video.mp4')
-#cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 if not cap.isOpened():
     print("Cannot open camera")
@@ -103,13 +110,14 @@ while True:
         img = np.pad(img, ((0,osth),(0,ostw),(0,0)))
 
     img = np.stack( [img] * MULTIPLE, axis = 0)
-    total_time -= time.perf_counter()
+    total_time = -time.perf_counter()
     frame = find_faces(img)
     total_time += time.perf_counter()
     total_frames += 1
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)    
 
-    print(total_time/total_frames/MULTIPLE, end = '\r')
+    tcur = (times[:,fr_count%16] - times[:,(fr_count+1)%16])
+    print(fr_count, "%.2fms %.2fms %.2fms" % (tcur[0], tcur[1], tcur[2]), end = '\r')
     
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) == ord('q'):
