@@ -10,7 +10,7 @@ from PIL import Image
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
-model = tf.keras.models.load_model('best.h5')
+model = tf.keras.models.load_model('models/best.h5')
 pad_size = 256
 threshold = 0.5
 
@@ -62,6 +62,9 @@ def find_faces(img, maxwidth, r):
         angle = f[3]
         centre_x = f[0]*scale
         centre_y = f[1]*scale
+
+        if a < 12 or a > 64:
+            continue
         
         if f[4] == 0:
             color = (0,0,255)
@@ -122,5 +125,5 @@ shuffle(records)
 for r in records:
     im = Image.open(path + r[0])
     im = np.array(im)
-    find_faces(im,1024, r)
+    find_faces(im,256, r)
 
