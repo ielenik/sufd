@@ -48,6 +48,50 @@ def createFaceModel():
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.LeakyReLU()(x)
         return x
+    
+    
+    input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
+    x = tf.concat([input,tf.square(input)], axis = -1)
+    x = tf.keras.layers.Conv2D(64, 8, strides = (8,8), padding='same')(x)
+    x = dn_block(x, 128, 4)
+    feathures = dn_block(x, 128, 4, False)
+
+    feathures = tf.keras.layers.Dropout(0.4)(feathures)
+    face_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    face_prob = tf.keras.layers.BatchNormalization()(face_prob)
+    face_prob = tf.keras.layers.Dense(1)(face_prob) - 10
+    maskspoof_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    maskspoof_prob = tf.keras.layers.BatchNormalization()(maskspoof_prob)
+    maskspoof_prob = tf.keras.layers.Dense(2)(maskspoof_prob)
+    metric_regr = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    metric_regr = tf.keras.layers.BatchNormalization()(metric_regr)
+    metric_regr = tf.keras.layers.Dense(4)(metric_regr)*0.1
+    output = tf.concat([face_prob,metric_regr,maskspoof_prob], axis = -1)
+    model = tf.keras.Model(input,output)
+    display_model_info(model)
+    return model
+
+def createFaceModel5():
+    def dn_block(x, nm, num_layers, do_max_pool = True):
+        for _ in range(num_layers):
+            x = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
+            x = tf.keras.layers.BatchNormalization()(x)
+            x = tf.keras.layers.LeakyReLU()(x)
+        if do_max_pool:
+            x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same')(x)
+        return x
+
+    def up_block(x, y, nm):
+        x = tf.keras.layers.UpSampling2D(size = (2,2))(x)
+        x = tf.concat([x,y], axis = -1)
+        x = tf.keras.layers.Conv2D(nm, 1, padding='same', kernel_initializer='he_normal',
+                    kernel_regularizer=tf.keras.regularizers.l2(1e-5))(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU()(x)
+        return x
 
     def vgg8_squareface():
         input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))

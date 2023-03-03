@@ -4,6 +4,7 @@
 temp/
 wandb/
 models/
+media/
 
 __pycache__/
 src/config.py
