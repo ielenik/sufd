@@ -10,13 +10,13 @@ from PIL import Image
 import os
 
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
-model1 = tf.keras.models.load_model('models/final_large.h5')
+model1 = tf.keras.models.load_model('models/save.h5')
 model2 = tf.keras.models.load_model('models/1003.h5')
 model3 = tf.keras.models.load_model('models/medium.h5')
 #model = tf.keras.models.load_model('models/best.h5')
 pad_size = 64
 threshold = 0.5
-MULTIPLE = 32
+MULTIPLE = 64
 
 models = [ model1, model2, model3 ]
 colors = [ (255,0,0), (0,255,0), (0,0,255)]
@@ -116,7 +116,7 @@ while True:
     total_frames += 1
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)    
 
-    tcur = (times[:,fr_count%16] - times[:,(fr_count+1)%16])
+    tcur = (times[:,fr_count%16] - times[:,(fr_count+1)%16])*1000/MULTIPLE
     print(fr_count, "%.2fms %.2fms %.2fms" % (tcur[0], tcur[1], tcur[2]), end = '\r')
     
     cv2.imshow('frame', frame)

@@ -26,8 +26,31 @@ def display_model_info(model):
     
     print("Model total pixels", total_pixels)
     print("Model total memory for", conf.BATCH_SIZE ,"batch", total_pixels*4*2*conf.BATCH_SIZE/2**20,'mb')
-
 def createFaceModel():
+    #INPUT_SIZE = 128
+    input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
+    backbone = tf.keras.applications.EfficientNetB0(include_top=False, input_shape=(INPUT_SIZE,INPUT_SIZE,3))
+    if INPUT_SIZE is not None:
+        backbone.summary()
+    backbone = tf.keras.Model(backbone.input,backbone.get_layer('block6a_expand_bn').output)
+    feathures = backbone(input)
+
+    feathures = tf.keras.layers.Dropout(0.4)(feathures)
+    face_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    face_prob = tf.keras.layers.BatchNormalization()(face_prob)
+    face_prob = tf.keras.layers.Dense(1)(face_prob) - 10
+    maskspoof_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    maskspoof_prob = tf.keras.layers.BatchNormalization()(maskspoof_prob)
+    maskspoof_prob = tf.keras.layers.Dense(2)(maskspoof_prob)
+    metric_regr = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
+    metric_regr = tf.keras.layers.BatchNormalization()(metric_regr)
+    metric_regr = tf.keras.layers.Dense(4)(metric_regr)*0.1
+    output = tf.concat([face_prob,metric_regr,maskspoof_prob], axis = -1)
+    model = tf.keras.Model(input,output)
+    display_model_info(model)
+    return model
+
+def createFaceModel7():
     def dn_block(x, nm, num_layers, do_max_pool = True):
         for _ in range(num_layers):
             x = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
@@ -53,8 +76,19 @@ def createFaceModel():
     input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
     x = tf.concat([input,tf.square(input)], axis = -1)
     x = tf.keras.layers.Conv2D(96, 12, strides = (8,8), padding='same')(x)
-    x = dn_block(x, 128, 4)
-    feathures = dn_block(x, 128, 4, False)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.concat([x,tf.square(x)], axis = -1)
+    x = tf.keras.layers.Conv2D(128, 3, strides = (2,2), padding='same')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.concat([x,tf.square(x)], axis = -1)
+    x = tf.keras.layers.Conv2D(128, 1, strides = (1,1), padding='same')(x)
+    x = tf.keras.layers.DepthwiseConv2D(8, padding='same')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.concat([x,tf.square(x)], axis = -1)
+    x = tf.keras.layers.Conv2D(128, 1, strides = (1,1), padding='same')(x)
+    x = tf.keras.layers.DepthwiseConv2D(8, padding='same')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    feathures = x
 
     feathures = tf.keras.layers.Dropout(0.4)(feathures)
     face_prob = tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu')(feathures)
