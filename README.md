@@ -2,7 +2,7 @@
 This is a face detection filter designed specifically for surveillance cameras.   
   
 Its advantages include   
--- very fast processing (capable of processing a 256px image in 0.4ms on an NVIDIA 1080, which equates to around 2500 fps)  
+-- very fast processing (capable of processing a 256px image in 4ms on an NVIDIA 1080, which equates to around 250 fps)  
 -- providing a rotated square bounding box for further face recognition  
 -- offers additional face attributes such as the probability of spoofing and mask wearing  
 -- not use complicated constuctions. So it can be used on embeded devices  

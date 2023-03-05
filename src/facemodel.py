@@ -52,7 +52,7 @@ def createFaceModel():
     
     input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
     x = tf.concat([input,tf.square(input)], axis = -1)
-    x = tf.keras.layers.Conv2D(64, 8, strides = (8,8), padding='same')(x)
+    x = tf.keras.layers.Conv2D(96, 12, strides = (8,8), padding='same')(x)
     x = dn_block(x, 128, 4)
     feathures = dn_block(x, 128, 4, False)
 

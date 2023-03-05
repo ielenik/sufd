@@ -8,3 +8,4 @@ media/
 
 __pycache__/
 *.mp4
+src/config.py
