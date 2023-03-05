@@ -142,7 +142,7 @@ def getFaceDatasets():
 
             mask[sy:ey,sx:ex,0] = 0
 
-            if s < 12 or s > 64:
+            if s < 8 or s > 48:
                 continue
             if f[4] < 0.5:
                 continue
