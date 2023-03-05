@@ -97,7 +97,7 @@ def getFaceDatasets():
 
         masks = []
         trans = []
-        for i in range(8):
+        for i in range(conf.QUEUE_MULT):
             scale = np.random.randint(30,200)/100.*scalefit
 
             ranshx = max((w*scale-tilesize_full)/2, tilesize_full/8)
@@ -178,11 +178,11 @@ def getFaceDatasets():
         image = tf.image.decode_jpeg(image_file, channels=3)
         batch = []
 #        for tr, mask in params:
-        for i in range(8):
+        for i in range(conf.QUEUE_MULT):
             tr = trans[i]
             tr.set_shape((8))
             masks[i].set_shape((tilesize_small,tilesize_small,8))
-            imaged = tfa.image.transform(image,tr, output_shape=[tilesize_full,tilesize_full], interpolation = 'bilinear')
+            imaged = tfa.image.transform(image,tr, output_shape=[tilesize_full,tilesize_full], interpolation = 'nearest')
             imaged = tf.cast(imaged,tf.float32)/127.5-1
             batch.append(imaged)
         return batch, masks
