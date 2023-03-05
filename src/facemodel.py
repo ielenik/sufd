@@ -27,7 +27,8 @@ def createFaceModel():
     
     
     input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
-    x = tf.concat([input,tf.square(input)], axis = -1)
+    x = input
+    #x = tf.concat([x,tf.square(x)], axis = -1)
     x = tf.keras.layers.Conv2D(512, 16, strides = (16,16), padding='same')(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = dn_block(x,128,4,False)

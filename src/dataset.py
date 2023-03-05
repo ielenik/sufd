@@ -94,6 +94,12 @@ def getFaceDatasets():
         scalefit = tilesize_full/max(w,h)
         if scalefit > 1:
             scalefit = 1
+        pre_scale = 1
+        if scalefit < 0.3:
+            pre_scale = scalefit*2
+            scalefit = 0.5
+            w = pre_scale*w
+            h = pre_scale*h
 
         masks = []
         trans = []
@@ -115,10 +121,15 @@ def getFaceDatasets():
                 if scale > 1:
                     scale = 1
 
-            tr = matrix([[scale*math.cos(angle),scale*math.sin(angle),tilesize_full/2-scale*(w*math.cos(angle)+h*math.sin(angle))/2 + shx],
+            tr = matrix([[scale*pre_scale*math.cos(angle),scale*pre_scale*math.sin(angle),tilesize_full/2-scale*(w*math.cos(angle)+h*math.sin(angle))/2 + shx],
+                        [scale*pre_scale*-math.sin(angle),scale*pre_scale*math.cos(angle),tilesize_full/2-scale*(-w*math.sin(angle)+h*math.cos(angle))/2 + shy],
+                        [0,0,1]])
+            tr1 = matrix([[scale*math.cos(angle),scale*math.sin(angle),tilesize_full/2-scale*(w*math.cos(angle)+h*math.sin(angle))/2 + shx],
                         [scale*-math.sin(angle),scale*math.cos(angle),tilesize_full/2-scale*(-w*math.sin(angle)+h*math.cos(angle))/2 + shy],
                         [0,0,1]])
-            Tinv = linalg.inv(tr)
+            
+
+            Tinv = linalg.inv(tr1)
             Tinvtuple = np.array([Tinv[0,0],Tinv[0,1], Tinv[0,2], Tinv[1,0],Tinv[1,1],Tinv[1,2],0,0]).astype(np.float32)
 
             mask = np.zeros((tilesize_small,tilesize_small,8)).astype(np.float32)
@@ -131,7 +142,7 @@ def getFaceDatasets():
                 x = int(rx)
                 y = int(ry)
 
-                s = f[2]*scale
+                s = f[2]*pre_scale*scale
                 a = f[3]+angle
 
                 ms = int(round(s/4/anchors_scale))
@@ -170,12 +181,13 @@ def getFaceDatasets():
                         mask[j,i,7] = f[6]
             masks.append(mask)
             trans.append(Tinvtuple)
-        return filename, np.array(masks), np.array(trans)
+        return filename, np.array(masks), np.array(trans), [int(h), int(w)]
 
 
-    def read_image(filename, masks, trans):
+    def read_image(filename, masks, trans, pool_size):
         image_file = tf.io.read_file(filename, name='read_file')
         image = tf.image.decode_jpeg(image_file, channels=3)
+        image = tf.image.resize(image[tf.newaxis,:,:,:],pool_size,)[0]
         batch = []
 #        for tr, mask in params:
         for i in range(conf.QUEUE_MULT):
@@ -188,7 +200,7 @@ def getFaceDatasets():
         return batch, masks
 
 
-    tf_prepare_image_transform = lambda index: tf.numpy_function(prepare_image_transform, [index], [tf.string, tf.float32, tf.float32])
+    tf_prepare_image_transform = lambda index: tf.numpy_function(prepare_image_transform, [index], [tf.string, tf.float32, tf.float32, tf.int32])
 
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
