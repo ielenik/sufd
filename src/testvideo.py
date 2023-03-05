@@ -78,9 +78,9 @@ def find_faces(img):
 
 import time
 
-#cap = cv2.VideoCapture('media/77677667.mp4')
+cap = cv2.VideoCapture('media/77677667.mp4')
 #cap = cv2.VideoCapture('media/video.mp4')
-cap = cv2.VideoCapture(1)
+#cap = cv2.VideoCapture(1)
 
 if not cap.isOpened():
     print("Cannot open camera")
