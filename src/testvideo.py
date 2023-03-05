@@ -9,9 +9,9 @@ from random import shuffle
 from PIL import Image
 import os
 
-#os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 model1 = tf.keras.models.load_model('models/final_large.h5')
-model2 = tf.keras.models.load_model('models/1003.h5')
+model2 = tf.keras.models.load_model('models/best.h5')
 model3 = tf.keras.models.load_model('models/medium.h5')
 #model = tf.keras.models.load_model('models/best.h5')
 pad_size = 64
@@ -78,9 +78,9 @@ def find_faces(img):
 
 import time
 
-#cap = cv2.VideoCapture('media/77677667.mp4')
+cap = cv2.VideoCapture('media/77677667.mp4')
 #cap = cv2.VideoCapture('media/video.mp4')
-cap = cv2.VideoCapture(1)
+#cap = cv2.VideoCapture(1)
 
 if not cap.isOpened():
     print("Cannot open camera")

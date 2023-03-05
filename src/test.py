@@ -9,7 +9,7 @@ from random import shuffle
 from PIL import Image
 import os
 
-#os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 model1 = tf.keras.models.load_model('models/final_large.h5')
 model2 = tf.keras.models.load_model('models/1003.h5')
 model3 = tf.keras.models.load_model('models/medium.h5')
@@ -124,7 +124,7 @@ def find_faces(img, maxwidth, r):
     plt.show()
 
 
-path = r'y:\FindFace/'
+path = r'c:/datasets/FindFace/'
 with open(path + 'filtered.txt') as json_file:
     records = json.load(json_file)
 print("Loaded " + str(len(records)) + " records")
