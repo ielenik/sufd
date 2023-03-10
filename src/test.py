@@ -10,8 +10,8 @@ from PIL import Image
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
-model1 = tf.keras.models.load_model('models/final_large.h5')
-model2 = tf.keras.models.load_model('models/1003.h5')
+model1 = tf.keras.models.load_model('models/best.h5')
+model2 = tf.keras.models.load_model('models/hpm5.h5')
 model3 = tf.keras.models.load_model('models/medium.h5')
 pad_size = 64
 threshold = 0.5
@@ -82,6 +82,7 @@ def find_faces(img, maxwidth, r):
         return 1/(1 + np.exp(-x))
 
 
+    print('*'*10)
     for model, col in zip(models,colors):
         pr = model(img)
 

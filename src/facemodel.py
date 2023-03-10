@@ -5,10 +5,13 @@ from . import config as conf
 INPUT_SIZE = None
 def createFaceModel():
     def dn_block(x, nm, num_layers, do_max_pool = True):
-        for _ in range(num_layers):
-            x = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
-            x = tf.keras.layers.BatchNormalization()(x)
-            x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU()(x)
+        for _ in range(num_layers-1):
+            xs = tf.keras.layers.Conv2D(nm, 3, padding='same', kernel_initializer='he_normal')(x)
+            xs = tf.keras.layers.BatchNormalization()(xs)
+            x = tf.keras.layers.LeakyReLU()(xs) - x
         if do_max_pool:
             x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same')(x)
         return x
@@ -28,10 +31,10 @@ def createFaceModel():
     
     input = tf.keras.layers.Input(shape=(INPUT_SIZE, INPUT_SIZE, 3))
     x = input
-    #x = tf.concat([x,tf.square(x)], axis = -1)
-    x = tf.keras.layers.Conv2D(512, 16, strides = (16,16), padding='same')(x)
+    x = tf.concat([x,tf.square(x)], axis = -1)
+    x = tf.keras.layers.Conv2D(256, 16, strides = (16,16), padding='same')(x)
     x = tf.keras.layers.BatchNormalization()(x)
-    x = dn_block(x,128,4,False)
+    x = dn_block(x,128,8,False)
     feathures = x
 
     feathures = tf.keras.layers.Dropout(0.4)(feathures)
