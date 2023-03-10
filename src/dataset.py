@@ -158,14 +158,11 @@ def getFaceDatasets():
 
                 mask[sy:ey,sx:ex,0] = 0
 
-                if s < 8 or s > 48:
+                if s < conf.MIN_FACE_SIZE or s > conf.MAX_FACE_SIZE:
                     continue
                 if f[4] < 0.5:
                     continue
-
-                if x < 0 or x >= tilesize_small or y < 0 or y>= tilesize_small:
-                    continue
-                    
+                   
                 for i in range(x,x+2):
                     if i < 0 or i >= tilesize_small:
                         continue
