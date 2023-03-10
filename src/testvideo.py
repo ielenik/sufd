@@ -9,19 +9,20 @@ from random import shuffle
 from PIL import Image
 import os
 
-#os.environ["CUDA_VISIBLE_DEVICES"]="1"
-model1 = tf.keras.models.load_model('models/save.h5')
-model2 = tf.keras.models.load_model('models/1003.h5')
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
+model1 = tf.keras.models.load_model('models/best.h5')
+model2 = tf.keras.models.load_model('models/hpm5.h5')
 model3 = tf.keras.models.load_model('models/medium.h5')
 #model = tf.keras.models.load_model('models/best.h5')
 pad_size = 64
 threshold = 0.5
 MULTIPLE = 64
+FRAMES_AVG = 16
 
 models = [ model1, model2, model3 ]
 colors = [ (255,0,0), (0,255,0), (0,0,255)]
-times = np.zeros((3,16))
-fr_count  = 16
+times = np.zeros((3,FRAMES_AVG))
+fr_count  = FRAMES_AVG
 
 def find_faces(img):
     global fr_count
@@ -32,12 +33,11 @@ def find_faces(img):
     font = cv2.FONT_HERSHEY_SIMPLEX
     def sigmoid(x):
         return 1/(1 + np.exp(-x))
-
     for k in range(len(models)):
         model = models[k]
         col = colors[k]
 
-        times[k,fr_count%16] = times[k,(fr_count+15)%16] - time.perf_counter()
+        times[k,fr_count%FRAMES_AVG] = times[k,(fr_count+15)%FRAMES_AVG] - time.perf_counter()
         pr = model(img)[0:1]
 
         centers = pr[:,:,:,0:1]
@@ -47,7 +47,7 @@ def find_faces(img):
         centers = tf.where(faces)
         faces = tf.gather_nd(pr, centers)
         num_faces = len(faces)
-        times[k,fr_count%16] += time.perf_counter()
+        times[k,fr_count%FRAMES_AVG] += time.perf_counter()
 
         
         faces = faces.numpy()
@@ -116,7 +116,7 @@ while True:
     total_frames += 1
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)    
 
-    tcur = (times[:,fr_count%16] - times[:,(fr_count+1)%16])*1000/MULTIPLE
+    tcur = (times[:,fr_count%FRAMES_AVG] - times[:,(fr_count+1)%FRAMES_AVG])*1000/MULTIPLE/FRAMES_AVG
     print(fr_count, "%.2fms %.2fms %.2fms" % (tcur[0], tcur[1], tcur[2]), end = '\r')
     
     cv2.imshow('frame', frame)
